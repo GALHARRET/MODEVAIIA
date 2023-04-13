@@ -1,0 +1,65 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "MODEVAIIA",
+    "section": "",
+    "text": "Ce site contient les présentations qui sont réalisées lors du huitième atelier de MODEVAIIA :\n\nP1 : The COVID-19 wave? A longitudinal study of affective experience and coping strategies during the first lockdown in France (Galharret J.-M., Sapin A., Bret A., Boudoukha A.-H., Navarro O., Fleury-Bahi G., & Congard A., Nantes Université)\nP2 : A la recherche du haut potentiel : les relations amicales à l’adolescence (Guignard, J.-H., Aubry, A., Bourdin, B., Galharret, J.-M., & Kindelberger, C. Nantes Université)\nP3 : Evolution de la motivation amoureuse au cours du lycée : contribution des expériences amoureuses et différence de sexe (Kindelberger, C., & Galharret, J.-M. Nantes Université)"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "P1.html",
+    "href": "P1.html",
+    "title": "P1",
+    "section": "",
+    "text": "Attaching package: 'dplyr'\n\n\nThe following objects are masked from 'package:stats':\n\n    filter, lag\n\n\nThe following objects are masked from 'package:base':\n\n    intersect, setdiff, setequal, union\n\n\nNew names:\n• `` -> `...1`"
+  },
+  {
+    "objectID": "P1.html#les-données",
+    "href": "P1.html#les-données",
+    "title": "P1",
+    "section": "Les données",
+    "text": "Les données\nLes données correspondent aux affects négatifs à faible activation mesurées 12 fois elles sont disponibles ici\n\n##      Y1 Y2 Y3 Y4 Y5 Y6 Y7 Y8  Y9 Y10 Y11 Y12\n## [1,] 34 38 39 38 52 39 36 29  36  61  52  60\n## [2,] 14 18 22 15  8 10 13 22  16  26  50  58\n## [3,] 80 70 40 70 75 75 71  6  70  36  32  18\n## [4,] 70 65 86 66 68 77 68 64  62  75  73  82\n## [5,] 53 66 66 63 63 65 68 60  60  66  70  76\n## [6,] 70 86 82 97 79 89 90 93 100 100 100 100\n\n\\(i=\\) 180 et \\(t=\\) 12."
+  },
+  {
+    "objectID": "P1.html#la-modélisation-trajectoire-cubique",
+    "href": "P1.html#la-modélisation-trajectoire-cubique",
+    "title": "P1",
+    "section": "La modélisation : Trajectoire cubique",
+    "text": "La modélisation : Trajectoire cubique\nOn veut estimer les trajectoires temporelles pour chaque individu \\(i\\) :\n\\[Y_i(t)=b_{0,i}+b_{1,i} t+ b_{2,i} t^2+ b_{3,i} t^3+\\varepsilon_i(t)\\]\nPar exemple pour l’individu 1 :"
+  },
+  {
+    "objectID": "P1.html#problème-de-colinéarité-dans-les-modèles-de-trajectoire",
+    "href": "P1.html#problème-de-colinéarité-dans-les-modèles-de-trajectoire",
+    "title": "P1",
+    "section": "Problème de colinéarité dans les modèles de trajectoire :",
+    "text": "Problème de colinéarité dans les modèles de trajectoire :\nL’estimation par MCO est instable lorsque les variables explicatives sont colinéaires et dans les modèles de trajectoire c’est le cas :\n\nXt<-cbind(1,t,t^2,t^3)\n# VIF de t^3 en fonction de t et de t^2\n1/(1-summary(lm(Xt[,4]~Xt[,2]+Xt[,3]))$r.squared)\n## [1] 315.2346\n\n\\(\\leadsto\\) Solution : polynomes orthogonaux"
+  },
+  {
+    "objectID": "P1.html#polynômes-orthogonaux",
+    "href": "P1.html#polynômes-orthogonaux",
+    "title": "P1",
+    "section": "Polynômes orthogonaux",
+    "text": "Polynômes orthogonaux\nOn veut déterminer des polynômes \\(P_k\\) de degré \\(k\\) qui sont orthogonaux (donc non corrélés) pour \\(t=\\{1,...,12\\}\\)."
+  },
+  {
+    "objectID": "P1.html#sur-r",
+    "href": "P1.html#sur-r",
+    "title": "P1",
+    "section": "Sur R",
+    "text": "Sur R\n\nX1t<-poly(1:12,3)\npar(mfrow=c(1,3))\nplot(t,X1t[,1],main=\"degré 1\")\nplot(t,X1t[,2],main=\"degré 2\")\nplot(t,X1t[,3],main=\"degré 3\")"
+  },
+  {
+    "objectID": "P1.html#estimation-mco",
+    "href": "P1.html#estimation-mco",
+    "title": "P1",
+    "section": "Estimation MCO",
+    "text": "Estimation MCO\n\nmod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])\nYp<-predict(mod1,interval=\"prediction\")\n## Warning in predict.lm(mod1, interval = \"prediction\"): predictions on current data refer to _future_ responses\nplot(t,Y1,pch=20,main=\"Trajectoire pour l'individu 1\",ylim=c(10,80))\nlines(t,Yp[,1],col=2)\nlines(t,Yp[,2],col=2,lty=2)\nlines(t,Yp[,3],col=2,lty=2)"
+  }
+]

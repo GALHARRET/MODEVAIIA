@@ -1,0 +1,11 @@
+---
+title: "MODEVAIIA"
+---
+
+Ce site contient les présentations qui sont réalisées lors du huitième atelier de MODEVAIIA :
+
+-   P1 : The COVID-19 wave? A longitudinal study of affective experience and coping strategies during the first lockdown in France (Galharret J.-M., Sapin A., Bret A., Boudoukha A.-H., Navarro O., Fleury-Bahi G., & Congard A., Nantes Université)
+
+-   P2 : A la recherche du haut potentiel : les relations amicales à l'adolescence (Guignard, J.-H., Aubry, A., Bourdin, B., Galharret, J.-M., & Kindelberger, C. Nantes Université)
+
+-   P3 : Evolution de la motivation amoureuse au cours du lycée : contribution des expériences amoureuses et différence de sexe (Kindelberger, C., & Galharret, J.-M. Nantes Université)

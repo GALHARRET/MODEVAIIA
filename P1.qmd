@@ -1,0 +1,105 @@
+---
+title: "P1"
+#titlegraphic: logo.png
+---
+
+```{r echo=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,echo=TRUE)
+```
+
+## Les données
+
+
+Les données correspondent aux affects négatifs à faible activation mesurées 12 fois elles sont disponibles [ici](Y.Rdata)
+
+
+```{r echo=F}
+load("Y.RData")
+head(Y)
+```
+
+$i=$ `r dim(Y)[1]` et $t=$ `r dim(Y)[2]`.
+
+## La modélisation : Trajectoire cubique
+
+On veut estimer les trajectoires temporelles pour chaque individu $i$ :
+
+$$Y_i(t)=b_{0,i}+b_{1,i} t+ b_{2,i} t^2+ b_{3,i} t^3+\varepsilon_i(t)$$
+
+Par exemple pour l'individu 1 :
+
+```{r echo=FALSE, fig.height=4}
+Y1<-Y[1,]
+t<-1:12
+plot(t,Y1,pch=20,main="Trajectoire pour l'individu 1")
+```
+
+## Problème de colinéarité dans les modèles de trajectoire :
+
+L'estimation par MCO est instable lorsque les variables explicatives sont colinéaires et dans les modèles de trajectoire c'est le cas :
+
+```{r echo=T}
+Xt<-cbind(1,t,t^2,t^3)
+# VIF de t^3 en fonction de t et de t^2
+1/(1-summary(lm(Xt[,4]~Xt[,2]+Xt[,3]))$r.squared)
+```
+
+$\leadsto$ Solution : polynomes orthogonaux
+
+## Polynômes orthogonaux
+
+On veut déterminer des polynômes $P_k$ de degré $k$ qui sont orthogonaux (donc non corrélés) pour $t=\{1,...,12\}$.
+
+## Sur R
+
+```{r echo=T,fig.height=3}
+X1t<-poly(1:12,3)
+par(mfrow=c(1,3))
+plot(t,X1t[,1],main="degré 1")
+plot(t,X1t[,2],main="degré 2")
+plot(t,X1t[,3],main="degré 3")
+```
+
+## Estimation MCO
+
+```{r warnings=FALSE}
+mod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])
+Yp<-predict(mod1,interval="prediction")
+plot(t,Y1,pch=20,main="Trajectoire pour l'individu 1",ylim=c(10,80))
+lines(t,Yp[,1],col=2)
+lines(t,Yp[,2],col=2,lty=2)
+lines(t,Yp[,3],col=2,lty=2)
+```
+
+# Le modèle bayésien sur Stan
+
+```{r}
+model<-'
+data{
+int <lower=1> n;
+int <lower=1> T;
+int<lower=1> p;
+matrix [n,T] y;
+matrix [T,p+1] X;
+}
+
+parameters {
+matrix[n,p+1] beta;
+vector[p+1] mu;
+vector<lower=0>[p+1] sigma;
+real<lower=0> sig;
+}
+
+model {
+for(t in 1:T){
+  for (i in 1:n){
+  y[i,t]~normal(X[t,]*to_vector(beta[i,]),sig);}
+  }
+sig~inv_gamma(.001,.001);
+for(k in 1:(p+1)) beta[,k]~normal(mu[k],sigma[k]);
+mu~normal(0,100);
+sigma~inv_gamma(.001,.001);
+}
+'
+```
+
