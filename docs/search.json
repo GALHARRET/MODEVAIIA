@@ -23,43 +23,64 @@
   {
     "objectID": "P1.html#les-données",
     "href": "P1.html#les-données",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "Les données",
-    "text": "Les données\nLes données correspondent aux affects négatifs à faible activation mesurées 12 fois elles sont disponibles ici\n\n##      Y1 Y2 Y3 Y4 Y5 Y6 Y7 Y8  Y9 Y10 Y11 Y12\n## [1,] 34 38 39 38 52 39 36 29  36  61  52  60\n## [2,] 14 18 22 15  8 10 13 22  16  26  50  58\n## [3,] 80 70 40 70 75 75 71  6  70  36  32  18\n## [4,] 70 65 86 66 68 77 68 64  62  75  73  82\n## [5,] 53 66 66 63 63 65 68 60  60  66  70  76\n## [6,] 70 86 82 97 79 89 90 93 100 100 100 100\n\n\\(i=\\) 180 et \\(t=\\) 12."
+    "text": "Les données\nLes données correspondent aux affects positifs à faible activation mesurées 12 fois elles sont disponibles ici. Les participants déplacent le curseur sur [0,100] pour donner une évaluation subjective de leur niveau de tranquilité.\n\nVoici un extrait des réponses obtenues\n\n##      Y1 Y2 Y3 Y4 Y5 Y6 Y7 Y8  Y9 Y10 Y11 Y12\n## [1,] 34 38 39 38 52 39 36 29  36  61  52  60\n## [2,] 14 18 22 15  8 10 13 22  16  26  50  58\n## [3,] 80 70 40 70 75 75 71  6  70  36  32  18\n## [4,] 70 65 86 66 68 77 68 64  62  75  73  82\n## [5,] 53 66 66 63 63 65 68 60  60  66  70  76\n## [6,] 70 86 82 97 79 89 90 93 100 100 100 100\n\nOn a \\(i=\\) 180 participants et \\(t=\\) 12 temps de mesure."
   },
   {
     "objectID": "P1.html#la-modélisation-trajectoire-cubique",
     "href": "P1.html#la-modélisation-trajectoire-cubique",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "La modélisation : Trajectoire cubique",
-    "text": "La modélisation : Trajectoire cubique\nOn veut estimer les trajectoires temporelles pour chaque individu \\(i\\) :\n\\[Y_i(t)=b_{0,i}+b_{1,i} t+ b_{2,i} t^2+ b_{3,i} t^3+\\varepsilon_i(t)\\]\nPar exemple pour l’individu 1 :"
+    "text": "La modélisation : Trajectoire cubique\nOn veut estimer les trajectoires temporelles pour chaque individu \\(i\\) :\n\\[Y_i(t)=b_{0,i}+b_{1,i} t+ b_{2,i} t^2+ b_{3,i} t^3+\\varepsilon_i(t)\\]"
   },
   {
     "objectID": "P1.html#problème-de-colinéarité-dans-les-modèles-de-trajectoire",
     "href": "P1.html#problème-de-colinéarité-dans-les-modèles-de-trajectoire",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "Problème de colinéarité dans les modèles de trajectoire :",
-    "text": "Problème de colinéarité dans les modèles de trajectoire :\nL’estimation par MCO est instable lorsque les variables explicatives sont colinéaires et dans les modèles de trajectoire c’est le cas :\n\nXt<-cbind(1,t,t^2,t^3)\n# VIF de t^3 en fonction de t et de t^2\n1/(1-summary(lm(Xt[,4]~Xt[,2]+Xt[,3]))$r.squared)\n## [1] 315.2346\n\n\\(\\leadsto\\) Solution : polynomes orthogonaux"
+    "text": "Problème de colinéarité dans les modèles de trajectoire :\nL’estimation par MCO est instable lorsque les variables explicatives sont colinéaires et dans les modèles de trajectoire c’est le cas :\n\nt<-1:12\nXt<-cbind(1,t,t^2,t^3)\n# VIF de t^3 en fonction de t et de t^2\n1/(1-summary(lm(Xt[,4]~Xt[,2]+Xt[,3]))$r.squared)\n## [1] 315.2346\n\n\\(\\leadsto\\) Solution : polynomes orthogonaux"
   },
   {
     "objectID": "P1.html#polynômes-orthogonaux",
     "href": "P1.html#polynômes-orthogonaux",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "Polynômes orthogonaux",
     "text": "Polynômes orthogonaux\nOn veut déterminer des polynômes \\(P_k\\) de degré \\(k\\) qui sont orthogonaux (donc non corrélés) pour \\(t=\\{1,...,12\\}\\)."
   },
   {
     "objectID": "P1.html#sur-r",
     "href": "P1.html#sur-r",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "Sur R",
-    "text": "Sur R\n\nX1t<-poly(1:12,3)\npar(mfrow=c(1,3))\nplot(t,X1t[,1],main=\"degré 1\")\nplot(t,X1t[,2],main=\"degré 2\")\nplot(t,X1t[,3],main=\"degré 3\")"
+    "text": "Sur R\n\nX1t<-poly(1:12,3)\npar(mfrow=c(1,3))\nplot(t,X1t[,1],main=\"degré 1\",type=\"l\")\nplot(t,X1t[,2],main=\"degré 2\",type=\"l\")\nplot(t,X1t[,3],main=\"degré 3\",type=\"l\")\n\n\n\nX1t<-cbind(1,X1t)"
   },
   {
     "objectID": "P1.html#estimation-mco",
     "href": "P1.html#estimation-mco",
-    "title": "P1",
+    "title": "The COVID-19 wave?",
     "section": "Estimation MCO",
-    "text": "Estimation MCO\n\nmod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])\nYp<-predict(mod1,interval=\"prediction\")\n## Warning in predict.lm(mod1, interval = \"prediction\"): predictions on current data refer to _future_ responses\nplot(t,Y1,pch=20,main=\"Trajectoire pour l'individu 1\",ylim=c(10,80))\nlines(t,Yp[,1],col=2)\nlines(t,Yp[,2],col=2,lty=2)\nlines(t,Yp[,3],col=2,lty=2)"
+    "text": "Estimation MCO\nOn veut estimer \\(Y_i(t)=\\beta_{0,i}+\\beta_{1,i} P_1(t)+ \\beta_{2,i} P_2(t)+ \\beta_{3,i} P_3(t)+\\varepsilon_i(t).\\)\n\nY1<-Y[1,]\nmod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])\nYp<-predict(mod1,interval=\"prediction\")\n## Warning in predict.lm(mod1, interval = \"prediction\"): predictions on current data refer to _future_ responses\nplot(t,Y1,pch=20,main=\"Trajectoire pour l'individu 1\",ylim=c(10,80))\nlines(t,Yp[,1],col=2)\nlines(t,Yp[,2],col=2,lty=2)\nlines(t,Yp[,3],col=2,lty=2)"
+  },
+  {
+    "objectID": "P1.html#comparaison-bayésien-mco",
+    "href": "P1.html#comparaison-bayésien-mco",
+    "title": "The COVID-19 wave?",
+    "section": "Comparaison bayésien / MCO :",
+    "text": "Comparaison bayésien / MCO :\nOn peut regarder la différence entre l’estimateur MCO et l’estimateur bayésien pour le premier individu.\n\n\nB<-apply(res$beta[1:dim(res$beta)[1],1,],2,mean)\nYpred<-X1t %*% B\n\nYpred_min<-Ypred-2*mean(res$sig)\nYpred_max<-Ypred+2*mean(res$sig)\n\nplot(t,Y1,pch=20,main=\"Comparaison des estimateurs pour l'individu 1\",ylim=c(0,80))\nlines(t,Yp[,1],col=2)\nlines(t,Yp[,2],col=2,lty=2)\nlines(t,Yp[,3],col=2,lty=2)\nlines(t,Ypred,col=3)\nlines(t,Ypred_min,col=3,lty=2)\nlines(t,Ypred_max,col=3,lty=2)\nlegend(\"bottomright\",lty=c(1,1),col=2:3,legend=c(\"MCO\",\"Bay\"),cex=0.75)"
+  },
+  {
+    "objectID": "P1.html#etude-des-trajectoires-individuelles",
+    "href": "P1.html#etude-des-trajectoires-individuelles",
+    "title": "The COVID-19 wave?",
+    "section": "Etude des trajectoires individuelles :",
+    "text": "Etude des trajectoires individuelles :\nOn va considérer deux cas : - Les individus pour lequels \\(Y\\) change de direction sur l’intervalle d’étude (i.e. Y augmente puis diminue puis réaugmente) - Les individus pour lequels \\(Y\\) ne change pas de direction sur l’intervalle d’étude mais pour lesquels il existe un point d’inflexion dans l’intervalle.\nIndividus pour lequels on a un changement de direction\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nQu’est-ce qu’un point d’inflexion?\n\nPour \\(Y\\) polynôme de degré 3, il s’agit du point (unique) \\(t_0\\) tel que \\(Y''(t_0)=0.\\)\nLorsque \\(t_0\\) est un point d’inflexion du polynôme de dégré 3 la tangente en \\(t_0\\) traverse la courbe.\n\n\n\n\n\n\n\nLorsque le coefficient de \\(t^3\\) est positif soit l’augmentation de \\(Y\\) accélère jusqu’à \\(t_0\\) puis ralentit (graphe de gauche) ou bien le contraire (graphe de droite).\n\nOn distingue deux types de trajectoires individuelles celles qui sont croissantes sur l’intervalle \\([1,12]\\) et celles qui sont décroissantes.\n\ninflex_coord<-function(beta){\n  t_infl=-beta[3]/(3*beta[4])\n  Y_infl=P(t_infl,beta)\n  return(c(t_infl,Y_infl))\n}\n\nPinfl<-apply(beta,1,inflex_coord)\nplot(1:12,rep(1,12),type=\"n\")\npoints(x=Pinfl[1,],y=rnorm(n,1,.1),pch=20)\npoints(x=inflex_coord(coef_t(apply(res$mu,2,mean)))[1],y=1,pch=20,col=\"purple\",cex=2)"
+  },
+  {
+    "objectID": "P1.html#titre-complet",
+    "href": "P1.html#titre-complet",
+    "title": "The COVID-19 wave?",
+    "section": "Titre complet",
+    "text": "Titre complet\nThe COVID-19 wave? A longitudinal study of affective experience and coping strategies during the first lockdown in France Galharret J.-M., Sapin A., Bret A., Boudoukha A.-H., Navarro O., Fleury-Bahi G., & Congard A. (Nantes Université)"
   }
 ]
