@@ -1,24 +1,28 @@
 ---
-title: "P1"
-#titlegraphic: logo.png
+title: "The COVID-19 wave?"
 ---
 
 ```{r echo=FALSE}
 knitr::opts_chunk$set(collapse = TRUE,echo=TRUE)
 ```
 
+## Titre complet
+The COVID-19 wave? A longitudinal study of affective experience and coping strategies during the first lockdown in France Galharret J.-M., Sapin A., Bret A., Boudoukha A.-H., Navarro O., Fleury-Bahi G., & Congard A. (Nantes Université)
+
 ## Les données
 
+Les données correspondent aux affects positifs à faible activation mesurées 12 fois elles sont disponibles [ici](https://uncloud.univ-nantes.fr/index.php/s/rPPcnA34PwWXErD). Les participants déplacent le curseur sur [0,100] pour donner une évaluation subjective de leur niveau de tranquilité.
 
-Les données correspondent aux affects négatifs à faible activation mesurées 12 fois elles sont disponibles [ici](Y.Rdata)
+![](question.png)
 
+Voici un extrait des réponses obtenues
 
 ```{r echo=F}
 load("Y.RData")
 head(Y)
 ```
 
-$i=$ `r dim(Y)[1]` et $t=$ `r dim(Y)[2]`.
+On a $i=$ `r dim(Y)[1]` participants et $t=$ `r dim(Y)[2]` temps de mesure.
 
 ## La modélisation : Trajectoire cubique
 
@@ -26,19 +30,12 @@ On veut estimer les trajectoires temporelles pour chaque individu $i$ :
 
 $$Y_i(t)=b_{0,i}+b_{1,i} t+ b_{2,i} t^2+ b_{3,i} t^3+\varepsilon_i(t)$$
 
-Par exemple pour l'individu 1 :
-
-```{r echo=FALSE, fig.height=4}
-Y1<-Y[1,]
-t<-1:12
-plot(t,Y1,pch=20,main="Trajectoire pour l'individu 1")
-```
-
 ## Problème de colinéarité dans les modèles de trajectoire :
 
 L'estimation par MCO est instable lorsque les variables explicatives sont colinéaires et dans les modèles de trajectoire c'est le cas :
 
 ```{r echo=T}
+t<-1:12
 Xt<-cbind(1,t,t^2,t^3)
 # VIF de t^3 en fonction de t et de t^2
 1/(1-summary(lm(Xt[,4]~Xt[,2]+Xt[,3]))$r.squared)
@@ -55,14 +52,18 @@ On veut déterminer des polynômes $P_k$ de degré $k$ qui sont orthogonaux (don
 ```{r echo=T,fig.height=3}
 X1t<-poly(1:12,3)
 par(mfrow=c(1,3))
-plot(t,X1t[,1],main="degré 1")
-plot(t,X1t[,2],main="degré 2")
-plot(t,X1t[,3],main="degré 3")
+plot(t,X1t[,1],main="degré 1",type="l")
+plot(t,X1t[,2],main="degré 2",type="l")
+plot(t,X1t[,3],main="degré 3",type="l")
+X1t<-cbind(1,X1t)
 ```
 
 ## Estimation MCO
 
+On veut estimer $Y_i(t)=\beta_{0,i}+\beta_{1,i} P_1(t)+ \beta_{2,i} P_2(t)+ \beta_{3,i} P_3(t)+\varepsilon_i(t).$
+
 ```{r warnings=FALSE}
+Y1<-Y[1,]
 mod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])
 Yp<-predict(mod1,interval="prediction")
 plot(t,Y1,pch=20,main="Trajectoire pour l'individu 1",ylim=c(10,80))
@@ -73,20 +74,29 @@ lines(t,Yp[,3],col=2,lty=2)
 
 # Le modèle bayésien sur Stan
 
+Soit $\mathbb X=[1,P_1(t),...,P_k(t)]\in \mathbb R^{n \times (k+1)}$ la matrice de design du modèle linéaire on veut estimer $\beta_{i},\mu,\sigma \in \mathbb R^{k+1}$ et $\sigma_g \in \mathbb R$ tels que :
+
+1.  $Y_{i,t}=\mathbb X \beta_i+\sigma_g \varepsilon_i$ où $\varepsilon_i\sim \mathcal N(0,1)$
+2.  $\beta_i=\mu+\sigma\varepsilon$ où $\varepsilon \sim \mathcal N(0,I_{k+1}).$
+
 ```{r}
 model<-'
 data{
 int <lower=1> n;
+// Number of time-measurement
 int <lower=1> T;
-int<lower=1> p;
+// degree of the polynom
+int<lower=1> k;
+// dependant variable
 matrix [n,T] y;
-matrix [T,p+1] X;
+// design matrix
+matrix [T,k+1] X;
 }
 
 parameters {
-matrix[n,p+1] beta;
-vector[p+1] mu;
-vector<lower=0>[p+1] sigma;
+matrix[n,k+1] beta;
+vector[k+1] mu;
+vector<lower=0>[k+1] sigma;
 real<lower=0> sig;
 }
 
@@ -96,10 +106,183 @@ for(t in 1:T){
   y[i,t]~normal(X[t,]*to_vector(beta[i,]),sig);}
   }
 sig~inv_gamma(.001,.001);
-for(k in 1:(p+1)) beta[,k]~normal(mu[k],sigma[k]);
+for(j in 1:(k+1)) beta[,j]~normal(mu[j],sigma[j]);
 mu~normal(0,100);
 sigma~inv_gamma(.001,.001);
 }
 '
 ```
 
+Code pour faire tourner le modèle :
+
+```{r eval=FALSE}
+library(rstan)
+long_model<- stan_model(model_code=model)
+fit <- sampling(long_model,data=list(n=dim(Y)[1],T=12,X=X1t,y=Y,p=3), iter = 10000, chains = 2)
+```
+
+Les résultats sont disponibles dans le fichier [res_bay.RData](https://uncloud.univ-nantes.fr/index.php/s/7mcmR7a5sFrD6dC)
+
+On peut regarder les sorties :
+
+```{r echo=F}
+load("res_bay.RData")
+par(mfrow=c(2,2))
+hist(res$mu[,1],main=expression(paste("Distribution de ",mu[1],sep="")),xlab="",col="purple")
+hist(res$mu[,2],main=expression(paste("Distribution de ",mu[2],sep="")),xlab="",col="purple")
+hist(res$mu[,3],main=expression(paste("Distribution de ",mu[3],sep="")),xlab="",col="purple")
+hist(res$mu[,4],main=expression(paste("Distribution de ",mu[4],sep="")),xlab="",col="purple")
+
+hist(res$sigma[,1],main=expression(paste("Distribution de ",sigma[1])),xlab="",col="purple")
+hist(res$sigma[,2],main=expression(paste("Distribution de ",sigma[2])),xlab="",col="purple")
+hist(res$sigma[,3],main=expression(paste("Distribution de ",sigma[3])),xlab="",col="purple")
+hist(res$sigma[,4],main=expression(paste("Distribution de ",sigma[4])),xlab="",col="purple")
+```
+
+## Comparaison bayésien / MCO :
+
+On peut regarder la différence entre l'estimateur MCO et l'estimateur bayésien pour le premier individu.
+
+```{r}
+
+B<-apply(res$beta[1:dim(res$beta)[1],1,],2,mean)
+Ypred<-X1t %*% B
+
+Ypred_min<-Ypred-2*mean(res$sig)
+Ypred_max<-Ypred+2*mean(res$sig)
+
+plot(t,Y1,pch=20,main="Comparaison des estimateurs pour l'individu 1",ylim=c(0,80))
+lines(t,Yp[,1],col=2)
+lines(t,Yp[,2],col=2,lty=2)
+lines(t,Yp[,3],col=2,lty=2)
+lines(t,Ypred,col=3)
+lines(t,Ypred_min,col=3,lty=2)
+lines(t,Ypred_max,col=3,lty=2)
+legend("bottomright",lty=c(1,1),col=2:3,legend=c("MCO","Bay"),cex=0.75)
+```
+
+## Etude des trajectoires individuelles :
+
+On va considérer deux cas :
+- Les individus pour lequels $Y$ change de direction sur l'intervalle d'étude (i.e. Y augmente puis diminue puis réaugmente)
+- Les individus pour lequels  $Y$ ne change pas de direction sur l'intervalle d'étude mais pour lesquels il existe un point d'inflexion dans l'intervalle.
+
+***Individus pour lequels on a un changement de direction***
+
+```{r echo=FALSE,warning=FALSE}
+coef_t<-function(beta){
+  X<-poly(1:12,3)
+  coef1<-solve(cbind(1,1:2)) %*% X[1:2,1]
+  coef2<-solve(cbind(1,1:3,(1:3)^2)) %*% X[1:3,2]
+  coef3<-solve(cbind(1,1:4,(1:4)^2,(1:4)^3)) %*% X[1:4,3]  
+  return(beta[1]*c(1,0,0,0)+beta[2]*c(coef1,0,0)+
+           beta[3]*c(coef2,0)+beta[4]*coef3)
+}
+
+
+P<-function(t,coef){
+  k<-length(coef)-1
+  X<-rep(1,length(t))
+  for(i in 1:k) X<-cbind(X,t^i)
+  return(X %*% coef)
+}
+
+n<-dim(Y)[1]
+B<-matrix(NA,ncol=4,nrow=n)
+for(i in 1:n) B[i,]<-apply(res$beta[1:dim(res$beta)[1],i,],2,mean)
+  
+beta<-t(apply(B,1,coef_t))
+
+D<-beta[,3]^2-3*beta[,2]*beta[,4]
+
+t1<-(-beta[,3]-sqrt(D))/(3*beta[,4])
+t2<-(-beta[,3]+sqrt(D))/(3*beta[,4])
+
+I1<-which(t1>1 & t1<12 & t2>1 & t2<12 & beta[,4]>0)
+I3<-which(t1>1 & t1<12 & t2>12  & beta[,4]>0)
+I5<-which(t1<1 & t2>1 & t2<12 & beta[,4]>0)
+I7<-which(t1<1 & t2>12  & beta[,4]>0)
+
+I2<-which(t1>1 & t1<12 & t2>1 & t2<12 & beta[,4]<0)
+I4<-which(t1>1 & t1<12 & t2<1  & beta[,4]<0)
+I6<-which(t1>12 & t2<12 & t2>1  & beta[,4]<0)
+I8<-which(t1>12 &  t2<1  & beta[,4]<0)
+
+
+Ip<-which(beta[,4]>0)
+Im<-which(beta[,4]<0)
+
+Ip<-Ip[-which(Ip %in% c(I1,I3,I5,I7))]
+Im<-Im[-which(Im %in% c(I2,I4,I6,I8))]
+
+Case<-list(I1,I2,c(I3,I4),c(I5,I6),c(Ip,I8),c(Im,I7))
+titleP<-c("Y augmente, diminue, augmente",
+          "Y diminue,augmente,diminue",
+          "Y augmente puis diminue",
+          "Y diminue puis augmente",
+          "Y augmente",
+          "Y diminue")
+for(i in 1:length(Case)){
+Ind<-Case[[i]]
+plot(t,P(t,beta[Ind[1],]),type="l",ylab="",main=titleP[i],ylim=c(10,90))
+points(x=t1[Ind[1]],y=P(t1[Ind[1]],beta[Ind[1],]),pch=20)
+points(x=t2[Ind[1]],y=P(t2[Ind[1]],beta[Ind[1],]),pch=20)
+for(i in 2:length(Ind)){
+lines(t,P(t,beta[Ind[i],]),col=i)
+points(x=t1[Ind[i]],y=P(t1[Ind[i]],beta[Ind[i],]),pch=20,col=i)
+points(x=t2[Ind[i]],y=P(t2[Ind[i]],beta[Ind[i],]),pch=20,col=i)
+} 
+}
+```
+
+
+
+
+***Qu'est-ce qu'un point d'inflexion?*** 
+
+- Pour $Y$ polynôme de degré 3, il s'agit du point (unique) $t_0$ tel que $Y''(t_0)=0.$ 
+
+- Lorsque $t_0$ est un point d'inflexion du polynôme de dégré 3 la tangente en $t_0$ traverse la courbe.
+
+```{r echo=F}
+t<-seq(1,12,by=.01)
+
+X<-poly(1:12,3)
+coef3<-solve(cbind(1,1:4,(1:4)^2,(1:4)^3)) %*% X[1:4,3] 
+
+coef<- -coef3
+par(mfrow=c(1,2))
+t0<-(-coef[3])/(3*coef[4])
+b<-P(t0,coef=c(coef[2],2*coef[3],3*coef[4]))
+a<-P(t0,coef)-b*t0
+plot(t,P(t,coef),type="l",xlab="t",ylab=expression(Y[i](t)))
+points(x=t0,P(t0,coef),pch=20,col=2)
+abline(a=a,b=b,lty=2,col=2)
+coef<-c(as.vector(solve(cbind(c(1,1),c(12,1))) %*% c(100+12^2-12^3/18,1-1/18)),-1,1/18)
+t0<-(-coef[3])/(3*coef[4])
+b<-P(t0,coef=c(coef[2],2*coef[3],3*coef[4]))
+a<-P(t0,coef)-b*t0
+plot(t,P(t,coef),type="l",xlab="t",ylab=expression(Y[i](t)))
+points(x=t0,P(t0,coef),pch=20,col=2)
+abline(a=a,b=b,lty=2,col=2)
+```
+
+- Lorsque le coefficient de $t^3$ est positif soit l'augmentation de $Y$ accélère jusqu'à $t_0$ puis ralentit (graphe de gauche) ou bien le contraire (graphe de droite). 
+
+
+On distingue deux types de trajectoires individuelles celles qui sont croissantes sur l'intervalle $[1,12]$ et celles qui sont décroissantes.
+
+
+
+```{r}
+inflex_coord<-function(beta){
+  t_infl=-beta[3]/(3*beta[4])
+  Y_infl=P(t_infl,beta)
+  return(c(t_infl,Y_infl))
+}
+
+Pinfl<-apply(beta,1,inflex_coord)
+plot(1:12,rep(1,12),type="n")
+points(x=Pinfl[1,],y=rnorm(n,1,.1),pch=20)
+points(x=inflex_coord(coef_t(apply(res$mu,2,mean)))[1],y=1,pch=20,col="purple",cex=2)
+```
