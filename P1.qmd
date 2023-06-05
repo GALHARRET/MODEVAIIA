@@ -4,6 +4,12 @@ title: "The COVID-19 wave?"
 
 ```{r echo=FALSE}
 knitr::opts_chunk$set(collapse = TRUE,echo=TRUE)
+load("~/Nextcloud/MODEVAIA/Y.RData")
+load("~/Nextcloud/MODEVAIA/X.RData")
+# data3 est la base de données des covariables 
+Y<-Y[,1:12]
+load("~/Nextcloud/MODEVAIA/res_bay.RData")
+
 ```
 
 ## Titre complet
@@ -11,14 +17,14 @@ The COVID-19 wave? A longitudinal study of affective experience and coping strat
 
 ## Les données
 
-Les données correspondent aux affects positifs à faible activation mesurées 12 fois elles sont disponibles [ici](https://uncloud.univ-nantes.fr/index.php/s/rPPcnA34PwWXErD). Les participants déplacent le curseur sur [0,100] pour donner une évaluation subjective de leur niveau de tranquilité.
+Les données correspondent aux affects positifs à faible activation (API) mesurées 12 fois elles sont disponibles [ici](https://uncloud.univ-nantes.fr/index.php/s/rPPcnA34PwWXErD). Les participants déplacent le curseur sur [0,100] pour donner une évaluation subjective de leur niveau de tranquilité et de .
 
 ![](question.png)
 
 Voici un extrait des réponses obtenues
 
 ```{r echo=F}
-load("Y.RData")
+
 head(Y)
 ```
 
@@ -63,7 +69,7 @@ X1t<-cbind(1,X1t)
 On veut estimer $Y_i(t)=\beta_{0,i}+\beta_{1,i} P_1(t)+ \beta_{2,i} P_2(t)+ \beta_{3,i} P_3(t)+\varepsilon_i(t).$
 
 ```{r warnings=FALSE}
-Y1<-Y[1,]
+Y1<-as.numeric(Y[1,])
 mod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])
 Yp<-predict(mod1,interval="prediction")
 plot(t,Y1,pch=20,main="Trajectoire pour l'individu 1",ylim=c(10,80))
@@ -76,8 +82,8 @@ lines(t,Yp[,3],col=2,lty=2)
 
 Soit $\mathbb X=[1,P_1(t),...,P_k(t)]\in \mathbb R^{n \times (k+1)}$ la matrice de design du modèle linéaire on veut estimer $\beta_{i},\mu,\sigma \in \mathbb R^{k+1}$ et $\sigma_g \in \mathbb R$ tels que :
 
-1.  $Y_{i,t}=\mathbb X \beta_i+\sigma_g \varepsilon_i$ où $\varepsilon_i\sim \mathcal N(0,1)$
-2.  $\beta_i=\mu+\sigma\varepsilon$ où $\varepsilon \sim \mathcal N(0,I_{k+1}).$
+1.  $Y_{i,t}=\mathbb X \beta_i+\sigma_g \ \varepsilon_i$ où $\varepsilon_i\sim \mathcal N(0,1)$
+2.  $\beta_i=\mu+\sigma \ \varepsilon$ où $\varepsilon \sim \mathcal N(0,I_{k+1}).$
 
 ```{r}
 model<-'
@@ -126,7 +132,7 @@ Les résultats sont disponibles dans le fichier [res_bay.RData](https://uncloud.
 On peut regarder les sorties :
 
 ```{r echo=F}
-load("res_bay.RData")
+res<-res_bay[[1]]
 par(mfrow=c(2,2))
 hist(res$mu[,1],main=expression(paste("Distribution de ",mu[1],sep="")),xlab="",col="purple")
 hist(res$mu[,2],main=expression(paste("Distribution de ",mu[2],sep="")),xlab="",col="purple")
@@ -144,30 +150,49 @@ hist(res$sigma[,4],main=expression(paste("Distribution de ",sigma[4])),xlab="",c
 On peut regarder la différence entre l'estimateur MCO et l'estimateur bayésien pour le premier individu.
 
 ```{r}
+Ypred<-X1t %*% t(res$beta[1:dim(res$beta)[1],1,])
+YpBay<-apply(Ypred,1,mean)
+mod1<-lm(Y1~X1t[,1]+X1t[,2]+X1t[,3])
+YpMCO<-predict(mod1)
 
-B<-apply(res$beta[1:dim(res$beta)[1],1,],2,mean)
-Ypred<-X1t %*% B
-
-Ypred_min<-Ypred-2*mean(res$sig)
-Ypred_max<-Ypred+2*mean(res$sig)
-
-plot(t,Y1,pch=20,main="Comparaison des estimateurs pour l'individu 1",ylim=c(0,80))
-lines(t,Yp[,1],col=2)
-lines(t,Yp[,2],col=2,lty=2)
-lines(t,Yp[,3],col=2,lty=2)
-lines(t,Ypred,col=3)
-lines(t,Ypred_min,col=3,lty=2)
-lines(t,Ypred_max,col=3,lty=2)
+plot(1:12,Y1,pch=20,main="Comparaison des estimateurs pour l'individu 1")
+lines(1:12,YpMCO,col=2)
+lines(1:12,YpBay,col=3)
 legend("bottomright",lty=c(1,1),col=2:3,legend=c("MCO","Bay"),cex=0.75)
 ```
+
+On peut aussi regarder ce que ça donne sur l'individu "moyen".
+
+```{r}
+n<-dim(Y)[1]
+B<-apply(res$mu,2,mean)
+dim(X1t)
+dim(res$mu)
+Ypred<-X1t %*% t(res$mu)
+YpBay<-apply(Ypred,1,mean)
+
+Ym<-apply(Y,2,mean)
+mod1<-lm(Ym~X1t[,1]+X1t[,2]+X1t[,3])
+YpMCO<-predict(mod1)
+
+plot(1:12,Ym,pch=20,main="Comparaison des estimateurs pour l'individu moyen")
+lines(1:12,YpMCO,col=2)
+lines(1:12,YpBay,col=3)
+legend("bottomright",lty=c(1,1),col=2:3,legend=c("MCO","Bay"),cex=0.75)
+```
+
 
 ## Etude des trajectoires individuelles :
 
 On va considérer deux cas :
+
 - Les individus pour lequels $Y$ change de direction sur l'intervalle d'étude (i.e. Y augmente puis diminue puis réaugmente)
+
 - Les individus pour lequels  $Y$ ne change pas de direction sur l'intervalle d'étude mais pour lesquels il existe un point d'inflexion dans l'intervalle.
 
-***Individus pour lequels on a un changement de direction***
+***La majorité des Individus connaît deux changements de direction***
+
+80 individus ont deux changements de direction, 64 un seul et 35 ont des affects qui ne font qu'augmenter.
 
 ```{r echo=FALSE,warning=FALSE}
 coef_t<-function(beta){
@@ -216,13 +241,13 @@ Ip<-Ip[-which(Ip %in% c(I1,I3,I5,I7))]
 Im<-Im[-which(Im %in% c(I2,I4,I6,I8))]
 
 Case<-list(I1,I2,c(I3,I4),c(I5,I6),c(Ip,I8),c(Im,I7))
-titleP<-c("Y augmente, diminue, augmente",
-          "Y diminue,augmente,diminue",
-          "Y augmente puis diminue",
-          "Y diminue puis augmente",
-          "Y augmente",
-          "Y diminue")
-for(i in 1:length(Case)){
+titleP<-c(paste("Y augmente, diminue, augmente n=",length(I1)),
+          paste("Y diminue,augmente,diminue n=",length(I2)),
+          paste("Y augmente puis diminue n=",length(c(I3,I4))),
+          paste("Y diminue puis augmente n=",length(c(I5,I6))),
+          paste("Y augmente n=",length(c(Ip,I8))),
+          paste("Y diminue n=",length(c(Im,I7))))
+for(i in 1:(length(Case)-1)){
 Ind<-Case[[i]]
 plot(t,P(t,beta[Ind[1],]),type="l",ylab="",main=titleP[i],ylim=c(10,90))
 points(x=t1[Ind[1]],y=P(t1[Ind[1]],beta[Ind[1],]),pch=20)
@@ -270,11 +295,12 @@ abline(a=a,b=b,lty=2,col=2)
 - Lorsque le coefficient de $t^3$ est positif soit l'augmentation de $Y$ accélère jusqu'à $t_0$ puis ralentit (graphe de gauche) ou bien le contraire (graphe de droite). 
 
 
-On distingue deux types de trajectoires individuelles celles qui sont croissantes sur l'intervalle $[1,12]$ et celles qui sont décroissantes.
+***Les points d'inflexion pour l'affect considéré*** 
+
+On constate que pour la plupart des participants le point d'inflexion est situé entre la semaine 4 et la semaine 8 (surtout pour les 73 individus identifiés précédemment).
 
 
-
-```{r}
+```{r echo=F}
 inflex_coord<-function(beta){
   t_infl=-beta[3]/(3*beta[4])
   Y_infl=P(t_infl,beta)
@@ -282,7 +308,39 @@ inflex_coord<-function(beta){
 }
 
 Pinfl<-apply(beta,1,inflex_coord)
-plot(1:12,rep(1,12),type="n")
-points(x=Pinfl[1,],y=rnorm(n,1,.1),pch=20)
-points(x=inflex_coord(coef_t(apply(res$mu,2,mean)))[1],y=1,pch=20,col="purple",cex=2)
+plot(1:12,rep(1,12),type="n",ylim=c(0.5,3),ylab="")
+points(x=Pinfl[1,I1],y=rnorm(length(I1),1,.1),pch=20,col=2)
+points(x=Pinfl[1,I2],y=rnorm(length(I2),1,.1),pch=20,col=3)
+points(x=Pinfl[1,c(I3,I4)],y=rnorm(length(c(I3,I4)),1,.1),pch=20,col=4)
+points(x=Pinfl[1,c(I5,I6)],y=rnorm(length(c(I5,I6)),1,.1),pch=20,col=5)
+points(x=Pinfl[1,c(Ip,I8)],y=rnorm(length(c(Ip,I8)),1,.1),pch=20,col=6)
+points(x=Pinfl[1,c(Im,I7)],y=rnorm(length(c(Im,I7)),1,.1),pch=20,col=7)
+abline(v=inflex_coord(coef_t(apply(res$mu,2,mean)))[1],lty=2,cex=2)
+legend("topright",pch=rep(20,6),col=2:7,legend = titleP,cex=.75)
 ```
+
+On constate que pour la plupart des participants le point d'inflexion est situé entre la semaine 4 et la semaine 8. La moyenne étant `r inflex_coord(coef_t(apply(res$mu,2,mean)))[1]`.
+
+
+```{r eval=FALSE}
+B<-dim(res_bay[[1]]$beta)[1]
+P_API<-rep(NA,n)
+P_APA<-rep(NA,n)
+P_ANI<-rep(NA,n)
+P_ANA<-rep(NA,n)
+for(i in 1:n){
+P_API[i]<-inflex_coord(coef_t(apply(res_bay[[1]]$beta[1:B,i,],2,mean)))[1]  
+P_APA[i]<-inflex_coord(coef_t(apply(res_bay[[2]]$beta[1:B,i,],2,mean)))[1]
+P_ANI[i]<-inflex_coord(coef_t(apply(res_bay[[3]]$beta[1:B,i,],2,mean)))[1]
+P_ANA[i]<-inflex_coord(coef_t(apply(res_bay[[4]]$beta[1:B,i,],2,mean)))[1]
+}
+
+boxplot(cbind(P_API,P_APA,P_ANA,P_ANI),ylim=c(1,12))
+abline(h=c(inflex_coord(coef_t(apply(res_bay[[1]]$mu,2,mean)))[1],
+        inflex_coord(coef_t(apply(res_bay[[2]]$mu,2,mean)))[1],
+        inflex_coord(coef_t(apply(res_bay[[3]]$mu,2,mean)))[1],
+        inflex_coord(coef_t(apply(res_bay[[4]]$mu,2,mean)))[1]))
+
+
+```
+
